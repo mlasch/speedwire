@@ -6,6 +6,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
+
+#include <speedwire.h>
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
@@ -14,7 +17,7 @@
 #define SPEEDWIRE_MULTICAST "239.12.255.254"
 #define MSGBUFSIZE 2048
 
-int main() {
+int main(int argc, char *argv[]) {
 	int fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		perror("socket");
@@ -59,6 +62,7 @@ int main() {
             return 1;
         }
 		printf("Received %d bytes\n", nbytes);
+		handle_packet(msgbuf, nbytes, &addr, addrlen);
 	}
 	return 0;
 }
