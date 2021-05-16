@@ -1,5 +1,18 @@
 #include "speedwire.h"
 #include <stdlib.h>
+#include <assert.h>
+
+static uint64_t be64_to_host(unsigned char* data) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	return
+			((uint64_t)data[7]<<0)  | ((uint64_t)data[6]<<8 ) |
+			((uint64_t)data[5]<<16) | ((uint64_t)data[4]<<24) |
+			((uint64_t)data[3]<<32) | ((uint64_t)data[2]<<40) |
+			((uint64_t)data[1]<<48) | ((uint64_t)data[0]<<56);
+#else
+	return (uint64_t) *data;
+#endif
+}
 
 static void print_header(struct speedwire_header* header) {
 	printf("vendor: %s\n", header->vendor);
@@ -21,20 +34,20 @@ static void print_obis_header(struct obis_header* header) {
 	printf("tarif: %x\n", header->tarif);
 }
 
-void handle_packet(char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrlen, speedwire_data_t* speedwire_data) {
+void handle_packet(unsigned char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrlen, speedwire_data_t* speedwire_data) {
 	/* fixed length header */
 	struct speedwire_header* header;
 	struct obis_header* obis;
-	uint32_t value;
+
 	header = (struct speedwire_header*) msgbuf;
 	print_header(header);
 
 	size_t offset = sizeof(struct speedwire_header); // 24
 	printf("struct size: %ld\n", offset);
-//	printf("%x %x %x\n", (unsigned char)msgbuf[offset], (unsigned char)msgbuf[offset+1], (unsigned char)msgbuf[offset+2]);
-
 
 	while (offset < ntohs(header->datalength)+16) {
+		uint32_t value;
+		uint64_t counter;
 		printf("== Offset %ld length: %d\n", offset, ntohs(header->datalength));
 		obis = (struct obis_header*) &msgbuf[offset];
 		print_obis_header(obis);
@@ -54,7 +67,8 @@ void handle_packet(char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrl
 				break;
 			case 8:
 				/* counter */
-				//printf("counter %d\n", ntohll((uint64_t)msgbuf[offset]));
+
+				printf("counter %ld\n", be64_to_host(&msgbuf[offset]));
 				offset += 8;
 				break;
 			default:
@@ -68,5 +82,6 @@ void handle_packet(char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrl
 	offset += 2;
 	uint16_t end_marker = ntohs(*(uint16_t*)&msgbuf[offset]);
 	offset += 2;
+	assert(offset == nbytes);
 	printf("End of packet %hu %hu offset: %ld\n", end_length, end_marker, offset);
 }
