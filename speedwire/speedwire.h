@@ -35,6 +35,8 @@ typedef struct {
 	orbis_data_t * orbis_data_list;
 } speedwire_data_t;
 
-void handle_packet(unsigned char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrlen, speedwire_data_t* speedwire_data);
+char* lookup_channel_name(uint8_t type);
+
+void handle_packet(const unsigned char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrlen, speedwire_data_t* speedwire_data);
 
 #endif //SPEEDWIRE_SPEEDWIRE_H
