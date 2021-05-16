@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
-struct speedwire_header
-{
+struct speedwire_header {
 	char vendor[4]; //0
 	uint16_t length; // 4
 	uint16_t tag0; // 6
@@ -27,16 +26,17 @@ struct obis_header {
 } __attribute__((packed));
 
 typedef struct {
-	struct orbis_data_t* next;
+	struct orbis_data_t *next;
 } orbis_data_t;
 
 typedef struct {
-	struct speedwire_header * header;
-	orbis_data_t * orbis_data_list;
+	struct speedwire_header *header;
+	orbis_data_t *orbis_data_list;
 } speedwire_data_t;
 
-char* lookup_channel_name(uint8_t type);
+char *lookup_channel_name(uint8_t type);
 
-void handle_packet(const unsigned char* msgbuf, int nbytes, struct sockaddr_in* addr, int addrlen, speedwire_data_t* speedwire_data);
+void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *addr, int addrlen,
+				   speedwire_data_t *speedwire_data);
 
 #endif //SPEEDWIRE_SPEEDWIRE_H
