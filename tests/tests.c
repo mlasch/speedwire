@@ -15,7 +15,7 @@ extern const unsigned char pkt1[CAPTURED_PACKET_LEN];
 
 static void test_lookup_channel_name(void **state) {
     assert_string_equal(lookup_channel_name(2), "sum_effective_power_minus");
-    assert_string_equal(lookup_channel_name(73), "l3_unknown");
+    assert_string_equal(lookup_channel_name(73), "l3_power_factor");
 }
 
 static void test_header_pkt0(void **state) {
@@ -23,6 +23,7 @@ static void test_header_pkt0(void **state) {
     header = (struct speedwire_header *)pkt0;
 
     assert_string_equal(header->vendor, "SMA");
+    assert_int_equal(ntohs(header->susy_id), 349);
     assert_int_equal(ntohs(header->proto_id), 0x6069);
     assert_int_equal(ntohl(header->meas_time), 1985149010);
 }
