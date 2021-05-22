@@ -18,20 +18,25 @@ struct speedwire_header {
 	uint32_t meas_time; // 24
 } __attribute__((packed));
 
-struct obis_header {
+typedef struct obis_header_t {
 	uint8_t channel;
 	uint8_t index;
 	uint8_t type;
 	uint8_t tarif;
-} __attribute__((packed));
+} __attribute__((packed)) obis_header_t;
 
-typedef struct {
+typedef struct orbis_data_t {
 	struct orbis_data_t *next;
+        char* property_name;
+        union {
+            uint32_t actual;
+            uint64_t counter;
+        };
 } orbis_data_t;
 
 typedef struct {
-	struct speedwire_header *header;
-	orbis_data_t *orbis_data_list;
+
+    orbis_data_t *orbis_data_list;
 } speedwire_data_t;
 
 char *lookup_channel_name(uint8_t type);

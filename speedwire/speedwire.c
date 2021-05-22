@@ -1,6 +1,7 @@
 #include "speedwire.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void print_header(struct speedwire_header *header) {
     printf("vendor: %s\n", header->vendor);
@@ -15,7 +16,7 @@ static void print_header(struct speedwire_header *header) {
     printf("meas_time: %ums\n", ntohl(header->meas_time));
 }
 
-static void print_obis_header(struct obis_header *header) {
+static void print_obis_header(obis_header_t *header) {
     printf("channel: %x\n", header->channel);
     printf("index: %d\n", header->index);
     printf("type: %x\n", header->type);
@@ -26,22 +27,24 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
                    speedwire_data_t *speedwire_data) {
     /* fixed length header */
     struct speedwire_header *header;
-    struct obis_header *obis;
+    //orbis_data_t *orbis_data = NULL;
+    orbis_data_t *orbis_data_new;
 
     header = (struct speedwire_header *)msgbuf;
     print_header(header);
 
     size_t offset = sizeof(struct speedwire_header); // 24
-    printf("struct size: %ld\n", offset);
+//    printf("struct size: %ld\n", offset);
 
     while (offset < ntohs(header->datalength) + 16) {
-        uint32_t value;
-        uint64_t counter;
-        char *name;
-        printf("== Offset %ld length: %d\n", offset, ntohs(header->datalength));
-        obis = (struct obis_header *)&msgbuf[offset];
-        print_obis_header(obis);
-        offset += sizeof(struct obis_header);
+        obis_header_t *obis;
+//        uint32_t actual;
+//        uint64_t counter;
+        const char *name;
+//        printf("== Offset %ld length: %d\n", offset, ntohs(header->datalength));
+        obis = (obis_header_t *)&msgbuf[offset];
+//        print_obis_header(obis);
+        offset += sizeof(obis_header_t);
 
         switch (obis->type) {
         case 0:
@@ -51,17 +54,36 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             break;
         case 4:
             /* actual */
-            value = ntohl(*(uint32_t *)&msgbuf[offset]);
             name = lookup_channel_name(obis->index);
-            if (name != NULL) {
-                printf("%s\n", name);
-            }
-            printf("value %d\n", value);
+//            printf("-> %s: value %d\n", name, ntohl(*(uint32_t *)&msgbuf[offset]));
+
+            orbis_data_new = malloc(sizeof(orbis_data_t));
+            // TODO: error handling
+            if (orbis_data_new == NULL) exit(-1);
+            orbis_data_new->actual = ntohl(*(uint32_t *)&msgbuf[offset]);
+            orbis_data_new->property_name = malloc (25+strlen("_act") + 1);
+            if (orbis_data_new->property_name) exit -1;
+            strncpy(orbis_data_new->property_name, name, strlen(name));
+            strncat(orbis_data_new->property_name, "_act", 4);
+            orbis_data_new->next = speedwire_data->orbis_data_list;
+            speedwire_data->orbis_data_list = orbis_data_new;
             offset += 4;
             break;
         case 8:
             /* counter */
-            printf("counter %ld\n", be64toh(*(uint64_t *)&msgbuf[offset]));
+            name = lookup_channel_name(obis->index);
+//            printf("%s: counter %ld\n", name, be64toh(*(uint64_t *)&msgbuf[offset]));
+
+            orbis_data_new = malloc(sizeof(orbis_data_t));
+            // TODO: error handling
+            if (orbis_data_new == NULL) exit(-1);
+            orbis_data_new->counter = be64toh(*(uint64_t *)&msgbuf[offset]);
+            orbis_data_new->property_name = malloc (25+strlen("_act") + 1);
+            if (orbis_data_new->property_name) exit -1;
+            strncpy(orbis_data_new->property_name, name, strlen(name));
+            strncat(orbis_data_new->property_name, "_cnt", 4);
+            orbis_data_new->next = speedwire_data->orbis_data_list;
+            speedwire_data->orbis_data_list = orbis_data_new;
             offset += 8;
             break;
         default:

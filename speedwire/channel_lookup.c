@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 struct channel {
     uint8_t index;
@@ -21,7 +22,7 @@ struct channel channel_list[35] = {{1, "sum_effective_power_plus"},
                                    {30, "l1_apparent_power_minus"},
                                    {31, "l1_current"},
                                    {32, "l1_voltage"},
-                                   {32, "l1_unknown"},
+                                   {33, "l1_unknown"},
                                    {41, "l2_effective_power_plus"},
                                    {42, "l2_effective_power_minus"},
                                    {43, "l2_reactive_power_plus"},
@@ -42,10 +43,11 @@ struct channel channel_list[35] = {{1, "sum_effective_power_plus"},
                                    {73, "l3_unknown"}};
 
 const char *lookup_channel_name(uint8_t index) {
-    for (uint8_t i; i < 35; i++) {
+    for (uint8_t i = 0; i < 35; i++) {
         if (channel_list[i].index == index) {
             return channel_list[i].name;
         }
     }
+    printf("channel name not found %d\n", index);
     return NULL;
 }
