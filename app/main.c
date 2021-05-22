@@ -62,7 +62,16 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         printf("Received %d bytes\n", nbytes);
-        handle_packet(msgbuf, nbytes, &addr, addrlen);
+        speedwire_data_t speedwire_data;
+        speedwire_data.orbis_data_list = NULL;
+        handle_packet(msgbuf, nbytes, &addr, addrlen, &speedwire_data);
+        orbis_data_t* obis_ptr = speedwire_data.orbis_data_list;
+        while (obis_ptr != NULL) {
+
+            printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
+
+            obis_ptr=obis_ptr->next;
+        }
     }
     return 0;
 }
