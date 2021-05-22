@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <inttypes.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,19 +44,32 @@ int main(int argc, char *argv[]) {
         perror("bind");
         return 1;
     }
+
+    /*
+     * Get interface index
+     */
+    const char* if_name = "eth0";
+    uint32_t if_index = if_nametoindex(if_name);
+    if (if_index == 0) {
+        perror("Cannot resolve interface name");
+        printf("No interface found for %s. Using INADDR_ANY\n", if_name);
+
+    }
+
     /*
      * Kernel should join the multicast group.
      */
-    struct ip_mreq mreq;
-    mreq.imr_multiaddr.s_addr = inet_addr(SPEEDWIRE_MULTICAST);
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreq, sizeof(mreq)) < 0) {
+    struct ip_mreqn mreqn;
+    mreqn.imr_multiaddr.s_addr = inet_addr(SPEEDWIRE_MULTICAST);
+    mreqn.imr_address.s_addr = INADDR_ANY;
+    mreqn.imr_ifindex = if_index; // NOLINT(cppcoreguidelines-narrowing-conversions)
+    if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreqn, sizeof(mreqn)) < 0) {
         perror("setsockopt");
         return 1;
     }
     for (;;) {
         char msgbuf[MSGBUFSIZE];
-        int addrlen = sizeof(addr);
+        socklen_t addrlen = sizeof(addr);
         int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *)&addr, &addrlen);
         if (nbytes < 0) {
             perror("recvfrom");
