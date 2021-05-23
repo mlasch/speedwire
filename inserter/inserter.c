@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
+
 const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name) {
     char * line_buffer = NULL;
     char * save_ptr = NULL;
@@ -70,7 +71,7 @@ _Noreturn void* influxdb_inserter(void* arg) {
         const char* new_line = NULL;
 
         for (speedwire_batch_t* ptr = batch_temp;ptr != NULL; ptr=ptr->next) {
-            new_line = generate_line_protocol(ptr->speedwire_data, "iot.emeter");
+            new_line = generate_line_protocol(ptr->speedwire_data, inserter_args->measurement);
             if (new_line == NULL) return NULL;
             size_t s1 = strlen(batch_lines);
             size_t s2 = strlen(new_line);
@@ -85,8 +86,7 @@ _Noreturn void* influxdb_inserter(void* arg) {
             new_line = NULL;
         }
         printf("%s\n", batch_lines);
-        const char* url = "";
-        influxdb_post_request(url, (const char*)batch_lines, inserter_args->curl_handle);
+        influxdb_post_request(inserter_args->url, (const char*)batch_lines, inserter_args->curl_handle);
         free(batch_lines);
         speedwire_free_batch(batch_temp);
 

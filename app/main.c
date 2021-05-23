@@ -10,9 +10,11 @@
 #include <time.h>
 #include <pthread.h>
 #include <curl/curl.h>
+#include <getopt.h>
 
-#include <speedwire.h>
 #include <inserter.h>
+#include <speedwire.h>
+#include <stdbool.h>
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
@@ -20,6 +22,19 @@
 #define SPEEDWIRE_PORT 9522
 #define SPEEDWIRE_MULTICAST "239.12.255.254"
 #define MSGBUFSIZE 2048
+
+#define TOOL_VERSION 0.1
+
+static void print_usage() {
+    printf("speedwire %s ( https://github.com/mlasch/speedwire )\n"
+           "Usage:\n"
+           "\t-i, --interface\t\tListening interface\n"
+           "\t-u, --url\t\tURL containing server, port, database and token\n"
+           "\t-m, --measurement\tMeasurement Name\n"
+           "\t-c, --batch-count\tNumber of batched measurements.\n"
+           "\t    --version\t\tPrint program version\n",
+           TOOL_VERSION);
+}
 
 static void init_inserter_args(inserter_args_t* args) {
     args->batch_read_ptr = NULL;
@@ -35,6 +50,63 @@ static void destroy_inserter_args(inserter_args_t* args) {
 }
 
 int main(int argc, char *argv[]) {
+    bool have_interface = 1, have_url = 1, have_measurement = 1;
+    inserter_args_t inserter_args;
+    init_inserter_args(&inserter_args);
+    char* if_name;
+    uint32_t batch_count = 20;
+
+    static struct option long_options[] = {/* flags */
+        /* arguments */
+        {"interface", required_argument, NULL, 'i'},
+        {"url", required_argument, NULL, 'u'},
+        {"measurement", required_argument, NULL, 'm'},
+        {"batch-count", required_argument, NULL, 'c'},
+        {"version", no_argument, NULL, 'v'},
+        {NULL, 0, NULL, 0}};
+
+    for (int option_index = 0, c = 0; c != -1; c = getopt_long(argc, argv, "i:u:m:c:v", long_options, &option_index)) {
+        char *end;
+        switch (c) {
+        case 'i':
+            asprintf(&if_name, "%s", optarg);
+            have_interface = 0;
+            break;
+        case 'u':
+            inserter_args.url = optarg;
+            have_url = 0;
+            break;
+        case 'm':
+            inserter_args.measurement = optarg;
+            have_measurement = 0;
+            break;
+        case 'c':
+            batch_count = strtol(optarg, &end, 10);
+            if (batch_count == 0 || optarg == end) {
+                print_usage();
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'v':
+            printf("netprobe %s\n", TOOL_VERSION);
+            exit(EXIT_SUCCESS);
+        case 0:
+            /* first loop run */
+            break;
+        default:
+            print_usage();
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (have_measurement) {
+        inserter_args.measurement = "iot.emeter";
+    }
+
+    if (have_interface || have_url) {
+        print_usage();
+        exit(EXIT_FAILURE);
+    }
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         perror("socket");
@@ -64,7 +136,6 @@ int main(int argc, char *argv[]) {
     /*
      * Get interface index
      */
-    const char* if_name = "eth0";
     uint32_t if_index = if_nametoindex(if_name);
     if (if_index == 0) {
         perror("Cannot resolve interface name");
@@ -87,8 +158,7 @@ int main(int argc, char *argv[]) {
     /*
      * Start inserter thread
      */
-    inserter_args_t inserter_args;
-    init_inserter_args(&inserter_args);
+
     pthread_t inserter_thread;
     int err = pthread_create(&inserter_thread, NULL, &influxdb_inserter, &inserter_args);
     if (err != 0) {
@@ -123,7 +193,7 @@ int main(int argc, char *argv[]) {
         batch_current = NULL;
         packet_cnt++;
 
-        if (packet_cnt >= 10) {
+        if (packet_cnt >= batch_count) {
             printf("Run inserter on collected batch\n");
             pthread_mutex_lock(&inserter_args.mtx);
             inserter_args.batch_read_ptr = batch_head;
