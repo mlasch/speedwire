@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <pthread.h>
+#include <curl/curl.h>
 
 #include <speedwire.h>
 #include <inserter.h>
@@ -24,6 +25,8 @@ static void init_inserter_args(inserter_args_t* args) {
     args->batch_read_ptr = NULL;
     pthread_mutex_init(&args->mtx, NULL);
     pthread_cond_init(&args->cv, NULL);
+
+    args->curl_handle = curl_easy_init();
 }
 
 static void destroy_inserter_args(inserter_args_t* args) {
@@ -97,8 +100,8 @@ int main(int argc, char *argv[]) {
      * Start packet collector
      */
     uint32_t packet_cnt = 0;
-    speedwire_batch_t* batch_new = NULL;
-    speedwire_batch_t* batch_collect = NULL;
+    speedwire_batch_t* batch_current = NULL;
+    speedwire_batch_t* batch_head = NULL;
     for (;;) {
         const unsigned char msgbuf[MSGBUFSIZE];
         socklen_t addrlen = sizeof(addr);
@@ -113,20 +116,21 @@ int main(int argc, char *argv[]) {
         handle_packet(msgbuf, nbytes, &addr, addrlen, speedwire_data_collect);
 
         // add packet to batch
-        batch_new = malloc(sizeof(speedwire_batch_t));
-        batch_new->speedwire_data = speedwire_data_collect;
-        batch_new->next = batch_collect;
-        batch_collect = batch_new;
+        batch_current = malloc(sizeof(speedwire_batch_t));
+        batch_current->speedwire_data = speedwire_data_collect;
+        batch_current->next = batch_head;
+        batch_head = batch_current;
+        batch_current = NULL;
         packet_cnt++;
 
-        if (packet_cnt > 20) {
-            printf("Run inserter on collected batch");
+        if (packet_cnt >= 10) {
+            printf("Run inserter on collected batch\n");
             pthread_mutex_lock(&inserter_args.mtx);
-            inserter_args.batch_read_ptr = batch_collect;
+            inserter_args.batch_read_ptr = batch_head;
             pthread_cond_signal(&inserter_args.cv);
             pthread_mutex_unlock(&inserter_args.mtx);
 
-            batch_collect = NULL;
+            batch_head = NULL;
             packet_cnt = 0;
         }
     }

@@ -29,20 +29,18 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
     /* fixed length header */
     struct speedwire_header *header;
     //obis_data_t *orbis_data = NULL;
-    obis_data_t *orbis_data_new;
+    obis_data_t *obis_data_new;
 
     header = (struct speedwire_header *)msgbuf;
-    print_header(header);
+//    print_header(header);
 
     size_t offset = sizeof(struct speedwire_header); // 24
-//    printf("struct size: %ld\n", offset);
+
     clock_gettime(CLOCK_REALTIME, &speedwire_data->timestamp);
     while (offset < ntohs(header->datalength) + 16) {
         obis_header_t *obis;
-//        uint32_t actual;
-//        uint64_t counter;
         const char *name;
-//        printf("== Offset %ld length: %d\n", offset, ntohs(header->datalength));
+
         obis = (obis_header_t *)&msgbuf[offset];
 //        print_obis_header(obis);
         offset += sizeof(obis_header_t);
@@ -50,7 +48,7 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
         switch (obis->type) {
         case 0:
             /* version */
-            printf("version: %x\n", ntohl(*(uint32_t *)&msgbuf[offset]));
+//            printf("version: %x\n", ntohl(*(uint32_t *)&msgbuf[offset]));
             offset += 4;
             break;
         case 4:
@@ -58,16 +56,14 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             name = lookup_channel_name(obis->index);
 //            printf("-> %s: value %d\n", name, ntohl(*(uint32_t *)&msgbuf[offset]));
 
-            orbis_data_new = malloc(sizeof(obis_data_t));
+            obis_data_new = malloc(sizeof(obis_data_t));
             // TODO: error handling
-            if (orbis_data_new == NULL) exit(-1);
-            orbis_data_new->actual = ntohl(*(uint32_t *)&msgbuf[offset]);
-            orbis_data_new->property_name = malloc (25+strlen("_act") + 1);
-            if (orbis_data_new->property_name) exit -1;
-            strncpy(orbis_data_new->property_name, name, strlen(name));
-            strncat(orbis_data_new->property_name, "_act", 4);
-            orbis_data_new->next = speedwire_data->obis_data_list;
-            speedwire_data->obis_data_list = orbis_data_new;
+            if (obis_data_new == NULL) exit(-1);
+            obis_data_new->actual = ntohl(*(uint32_t *)&msgbuf[offset]);
+            asprintf(&obis_data_new->property_name, "%s_act", name);
+            obis_data_new->next = speedwire_data->obis_data_list;
+            speedwire_data->obis_data_list = obis_data_new;
+            obis_data_new = NULL;
             offset += 4;
             break;
         case 8:
@@ -75,16 +71,14 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             name = lookup_channel_name(obis->index);
 //            printf("%s: counter %ld\n", name, be64toh(*(uint64_t *)&msgbuf[offset]));
 
-            orbis_data_new = malloc(sizeof(obis_data_t));
+            obis_data_new = malloc(sizeof(obis_data_t));
             // TODO: error handling
-            if (orbis_data_new == NULL) exit(-1);
-            orbis_data_new->counter = be64toh(*(uint64_t *)&msgbuf[offset]);
-            orbis_data_new->property_name = malloc (25+strlen("_act") + 1);
-            if (orbis_data_new->property_name) exit -1;
-            strncpy(orbis_data_new->property_name, name, strlen(name));
-            strncat(orbis_data_new->property_name, "_cnt", 4);
-            orbis_data_new->next = speedwire_data->obis_data_list;
-            speedwire_data->obis_data_list = orbis_data_new;
+            if (obis_data_new == NULL) exit(-1);
+            obis_data_new->counter = be64toh(*(uint64_t *)&msgbuf[offset]);
+            asprintf(&obis_data_new->property_name, "%s_cnt", name);
+            obis_data_new->next = speedwire_data->obis_data_list;
+            speedwire_data->obis_data_list = obis_data_new;
+            obis_data_new = NULL;
             offset += 8;
             break;
         default:
@@ -107,15 +101,23 @@ void speedwire_free_data(speedwire_data_t* data) {
     obis_data_t* delete_ptr = NULL;
     while (obis_list_ptr) {
         delete_ptr = obis_list_ptr;
+//        printf("free: %s\n", delete_ptr->property_name);
         obis_list_ptr = obis_list_ptr->next;
+        free(delete_ptr->property_name);
         free(delete_ptr);
     }
     free(data);
 }
 
 void speedwire_free_batch(speedwire_batch_t* batch) {
-    for (speedwire_batch_t* ptr = batch;ptr != NULL; ptr=ptr->next) {
-        speedwire_free_data(ptr->speedwire_data);
+    speedwire_batch_t* delete_ptr = NULL;
+
+    while (batch) {
+//        printf("Delete Batch\n");
+        delete_ptr = batch;
+        speedwire_free_data(batch->speedwire_data);
+        batch = batch->next;
+
+        free(delete_ptr);
     }
-    free(batch);
 }
