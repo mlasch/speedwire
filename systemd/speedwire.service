@@ -1,0 +1,11 @@
+[Unit]
+Description=SMA speedwire inserter.
+
+[Service]
+Type=simple
+ExecStart=/home/pi/speedwire/build/speedwire -u https://example.com/guard/write/ABCD?db=data -i eth0
+User=pi
+Group=pi
+
+[Install]
+WantedBy=multi-user.target
