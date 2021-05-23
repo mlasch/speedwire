@@ -26,22 +26,28 @@ typedef struct obis_header_t {
 } __attribute__((packed)) obis_header_t;
 
 typedef struct orbis_data_t {
-	struct orbis_data_t *next;
+	struct obis_data_t *next;
         char* property_name;
         union {
             uint32_t actual;
             uint64_t counter;
         };
-} orbis_data_t;
+} obis_data_t;
 
 typedef struct {
-
-    orbis_data_t *orbis_data_list;
+    struct timespec timestamp;
+    obis_data_t *obis_data_list;
 } speedwire_data_t;
+
+typedef struct {
+    struct speedwire_batch_t* next;
+    speedwire_data_t *speedwire_data;
+} speedwire_batch_t;
 
 char *lookup_channel_name(uint8_t type);
 
 void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *addr, int addrlen,
 				   speedwire_data_t *speedwire_data);
-
+void speedwire_free_data(speedwire_data_t* data);
+void speedwire_free_batch(speedwire_batch_t* batch);
 #endif //SPEEDWIRE_SPEEDWIRE_H

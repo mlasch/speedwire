@@ -8,8 +8,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
+#include <pthread.h>
 
 #include <speedwire.h>
+#include <inserter.h>
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
@@ -17,6 +19,17 @@
 #define SPEEDWIRE_PORT 9522
 #define SPEEDWIRE_MULTICAST "239.12.255.254"
 #define MSGBUFSIZE 2048
+
+static void init_inserter_args(inserter_args_t* args) {
+    args->batch_read_ptr = NULL;
+    pthread_mutex_init(&args->mtx, NULL);
+    pthread_cond_init(&args->cv, NULL);
+}
+
+static void destroy_inserter_args(inserter_args_t* args) {
+    pthread_mutex_destroy(&args->mtx);
+    pthread_cond_destroy(&args->cv);
+}
 
 int main(int argc, char *argv[]) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -67,8 +80,27 @@ int main(int argc, char *argv[]) {
         perror("setsockopt");
         return 1;
     }
+
+    /*
+     * Start inserter thread
+     */
+    inserter_args_t inserter_args;
+    init_inserter_args(&inserter_args);
+    pthread_t inserter_thread;
+    int err = pthread_create(&inserter_thread, NULL, &influxdb_inserter, &inserter_args);
+    if (err != 0) {
+        printf("\ncan't create thread :[%s]", strerror(err));
+        exit(1);
+    }
+
+    /*
+     * Start packet collector
+     */
+    uint32_t packet_cnt = 0;
+    speedwire_batch_t* batch_new = NULL;
+    speedwire_batch_t* batch_collect = NULL;
     for (;;) {
-        char msgbuf[MSGBUFSIZE];
+        const unsigned char msgbuf[MSGBUFSIZE];
         socklen_t addrlen = sizeof(addr);
         int nbytes = recvfrom(fd, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *)&addr, &addrlen);
         if (nbytes < 0) {
@@ -76,15 +108,26 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         printf("Received %d bytes\n", nbytes);
-        speedwire_data_t speedwire_data;
-        speedwire_data.orbis_data_list = NULL;
-        handle_packet(msgbuf, nbytes, &addr, addrlen, &speedwire_data);
-        orbis_data_t* obis_ptr = speedwire_data.orbis_data_list;
-        while (obis_ptr != NULL) {
+        speedwire_data_t* speedwire_data_collect = malloc(sizeof(speedwire_data_t));
+        speedwire_data_collect->obis_data_list = NULL;
+        handle_packet(msgbuf, nbytes, &addr, addrlen, speedwire_data_collect);
 
-            printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
+        // add packet to batch
+        batch_new = malloc(sizeof(speedwire_data_t));
+        batch_new->speedwire_data = &speedwire_data_collect;
+        batch_new->next = batch_collect;
+        batch_collect = batch_new;
+        packet_cnt++;
 
-            obis_ptr=obis_ptr->next;
+        if (packet_cnt > 20) {
+            printf("Run inserter on collected batch");
+            pthread_mutex_lock(&inserter_args.mtx);
+            inserter_args.batch_read_ptr = batch_collect;
+            pthread_cond_signal(&inserter_args.cv);
+            pthread_mutex_unlock(&inserter_args.mtx);
+
+            batch_collect = NULL;
+            packet_cnt = 0;
         }
     }
     return 0;

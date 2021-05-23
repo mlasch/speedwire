@@ -6,6 +6,8 @@
 #include <stdlib.h>
 
 #include <cmocka.h>
+#include <time.h>
+#include <inserter.h>
 
 #define CAPTURED_PACKET_LEN 642
 #define PCAP_ETH_IP_OFFSET 42
@@ -33,13 +35,13 @@ static void test_handle_pkt0(void **state) {
     int addrlen = sizeof(addr);
 
     speedwire_data_t speedwire_data;
-    speedwire_data.orbis_data_list = NULL;
+    speedwire_data.obis_data_list = NULL;
     handle_packet(pkt0, 600, &addr, addrlen, &speedwire_data);
 
+    obis_data_t * obis_ptr = speedwire_data.obis_data_list;
 
-    orbis_data_t* obis_ptr = speedwire_data.orbis_data_list;
     while (obis_ptr != NULL) {
-
+        // TODO: run asserts against obis
         printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
 
         obis_ptr=obis_ptr->next;
@@ -51,16 +53,28 @@ static void test_handle_pkt1(void **state) {
     int addrlen = sizeof(addr);
 
     speedwire_data_t speedwire_data;
-    speedwire_data.orbis_data_list = NULL;
+    speedwire_data.obis_data_list = NULL;
     handle_packet(pkt1 + PCAP_ETH_IP_OFFSET, CAPTURED_PACKET_LEN - PCAP_ETH_IP_OFFSET, &addr, addrlen, &speedwire_data);
-    orbis_data_t* obis_ptr = speedwire_data.orbis_data_list;
+    obis_data_t * obis_ptr = speedwire_data.obis_data_list;
     while (obis_ptr != NULL) {
 
         printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
 
-
         obis_ptr=obis_ptr->next;
     }
+}
+
+static void test_lineproto(void **state) {
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
+
+    speedwire_data_t speedwire_data;
+    speedwire_data.obis_data_list = NULL;
+    handle_packet(pkt0, 600, &addr, addrlen, &speedwire_data);
+
+    const char* lineproto;
+    lineproto = generate_line_protocol(&speedwire_data, "emeter");
+    printf("%s\n", lineproto);
 }
 
 int main(int argc, char *argv[]) {
@@ -69,6 +83,7 @@ int main(int argc, char *argv[]) {
         cmocka_unit_test(test_header_pkt0),
         cmocka_unit_test(test_handle_pkt0),
         cmocka_unit_test(test_handle_pkt1),
+        cmocka_unit_test(test_lineproto),
     };
 
     int count_fail_tests = cmocka_run_group_tests(tests, NULL, NULL);
