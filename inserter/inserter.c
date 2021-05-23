@@ -2,35 +2,36 @@
 #include <speedwire.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdio.h>
 
 const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name) {
-    char * line_buffer;
-    line_buffer = malloc(strlen(meas_name));
-    strcpy(line_buffer, meas_name);
-    strcat(line_buffer, " ");
+    char * line_buffer = NULL;
+    if (asprintf(&line_buffer, "%s ", meas_name) < 0) {
+        return NULL;
+    }
 
-    char elem_buffer[100];
     for (obis_data_t * obis_ptr=data->obis_data_list;obis_ptr != NULL; obis_ptr = obis_ptr->next) {
         printf("LINE %s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
+        if (asprintf(&line_buffer, "%s%s=%ld", line_buffer, obis_ptr->property_name, obis_ptr->counter) < 0) {
+            return NULL;
+        }
 
-        snprintf(elem_buffer, 100, "%s=%ld", obis_ptr->property_name, obis_ptr->counter);
-        line_buffer = realloc(line_buffer, strlen(line_buffer) + strlen(elem_buffer));
-        strcat(line_buffer, elem_buffer);
         if (obis_ptr->next) {
-            strcat(line_buffer, ",");
+            if (asprintf(&line_buffer, "%s,", line_buffer) < 0) {
+                return NULL;
+            }
         }
     }
-    snprintf(elem_buffer, 100, " %ld%09ld", data->timestamp.tv_sec,data->timestamp.tv_nsec);
-    line_buffer = realloc(line_buffer, strlen(line_buffer) + strlen(elem_buffer));
-    strcat(line_buffer, elem_buffer);
+    if (asprintf(&line_buffer, "%s %ld%09ld", line_buffer, data->timestamp.tv_sec,data->timestamp.tv_nsec) < 0) {
+        return NULL;
+    }
 
     return line_buffer;
 }
 
 _Noreturn void* influxdb_inserter(void* arg) {
     inserter_args_t* inserter_args = (inserter_args_t*) arg;
-    printf("Start influxdb inserter");
+    printf("Start influxdb inserter\n");
     speedwire_batch_t * batch_temp = NULL;
     for(;;) {
         pthread_mutex_lock(&inserter_args->mtx);

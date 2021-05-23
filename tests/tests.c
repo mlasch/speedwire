@@ -42,7 +42,7 @@ static void test_handle_pkt0(void **state) {
 
     while (obis_ptr != NULL) {
         // TODO: run asserts against obis
-        printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
+        printf("%s: %lld\n", obis_ptr->property_name, obis_ptr->counter);
 
         obis_ptr=obis_ptr->next;
     }
@@ -58,7 +58,7 @@ static void test_handle_pkt1(void **state) {
     obis_data_t * obis_ptr = speedwire_data.obis_data_list;
     while (obis_ptr != NULL) {
 
-        printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
+        printf("%s: %lld\n", obis_ptr->property_name, obis_ptr->counter);
 
         obis_ptr=obis_ptr->next;
     }
@@ -74,6 +74,7 @@ static void test_lineproto(void **state) {
 
     const char* lineproto;
     lineproto = generate_line_protocol(&speedwire_data, "emeter");
+    assert_non_null(lineproto);
     printf("%s\n", lineproto);
 }
 

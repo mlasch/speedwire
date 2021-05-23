@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
         handle_packet(msgbuf, nbytes, &addr, addrlen, speedwire_data_collect);
 
         // add packet to batch
-        batch_new = malloc(sizeof(speedwire_data_t));
-        batch_new->speedwire_data = &speedwire_data_collect;
+        batch_new = malloc(sizeof(speedwire_batch_t));
+        batch_new->speedwire_data = speedwire_data_collect;
         batch_new->next = batch_collect;
         batch_collect = batch_new;
         packet_cnt++;

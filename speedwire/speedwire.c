@@ -103,9 +103,14 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
 }
 
 void speedwire_free_data(speedwire_data_t* data) {
-    for (speedwire_batch_t* ptr = data;ptr != NULL; ptr=ptr->next) {
-
+    obis_data_t* obis_list_ptr = data->obis_data_list;
+    obis_data_t* delete_ptr = NULL;
+    while (obis_list_ptr) {
+        delete_ptr = obis_list_ptr;
+        obis_list_ptr = obis_list_ptr->next;
+        free(delete_ptr);
     }
+    free(data);
 }
 
 void speedwire_free_batch(speedwire_batch_t* batch) {
