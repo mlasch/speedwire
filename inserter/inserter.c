@@ -96,5 +96,4 @@ _Noreturn void* influxdb_inserter(void* arg) {
         free((char*)batch_lines);
         speedwire_free_batch(batch_temp);
     }
-    return NULL;
 }

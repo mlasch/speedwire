@@ -10,6 +10,7 @@ include_directories(${INSERTER_HEADERS_DIR})
 
 add_executable(speedwire ${SPEEDWIRE_SOURCES} ${INSERTER_SOURCES} main.c)
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
+add_compile_definitions(_GNU_SOURCE)
 target_link_libraries(${PROJECT_NAME} PRIVATE pthread curl)
 
 if(SANITIZER)
