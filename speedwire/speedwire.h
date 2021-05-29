@@ -16,7 +16,7 @@ struct speedwire_header {
 	uint16_t susy_id; //18
 	uint32_t serial_no;  //20
 	uint32_t meas_time; // 24
-} __attribute__((packed));
+} __attribute__((packed)) speedwire_header;
 
 typedef struct obis_header_t {
 	uint8_t channel;
@@ -25,21 +25,21 @@ typedef struct obis_header_t {
 	uint8_t tarif;
 } __attribute__((packed)) obis_header_t;
 
-typedef struct orbis_data_t {
-	struct obis_data_t *next;
-        char* property_name;
-        union {
-            uint32_t actual;
-            uint64_t counter;
-        };
+typedef struct obis_data_t {
+    struct obis_data_t* next;
+    char* property_name;
+    union {
+        uint32_t actual;
+        uint64_t counter;
+    };
 } obis_data_t;
 
-typedef struct {
+typedef struct speedwire_data_t {
     struct timespec timestamp;
     obis_data_t *obis_data_list;
 } speedwire_data_t;
 
-typedef struct {
+typedef struct speedwire_batch_t {
     struct speedwire_batch_t* next;
     speedwire_data_t *speedwire_data;
 } speedwire_batch_t;

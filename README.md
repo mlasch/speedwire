@@ -1,6 +1,8 @@
-# speedwire multicast collector
+# SMA speedwire multicast collector
 
-Data collector for the SMA speedwire protcol which is used with the SMA ENERGY METER.
+This is a data collector for the SMA speedwire protcol. It is used and tested only with a SMA EMETER-20.
+
+The inserter stores persistend data into a influxdb 1.x server protected by [influxdb-guard](github.com/yvesf/influxdb-guard).
 
 ## Build and install
 

@@ -42,6 +42,9 @@ const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name
 
 const char* generate_line_batch(speedwire_batch_t* batch_temp, const char* measurement) {
     char* batch_lines = malloc(1);
+    if (batch_lines == NULL) {
+        return NULL;
+    }
     *batch_lines = '\0';
     const char* new_line = NULL;
 
@@ -52,9 +55,15 @@ const char* generate_line_batch(speedwire_batch_t* batch_temp, const char* measu
         size_t s1 = strlen(batch_lines);
         size_t s2 = strlen(new_line);
         batch_lines = realloc(batch_lines, s1 + s2 + 1);
+        if (batch_lines == NULL) {
+            return NULL;
+        }
         strcat(batch_lines, new_line);
         if (ptr->next != NULL) {
             batch_lines = realloc(batch_lines, s1 + s2 + 2);
+            if (batch_lines == NULL) {
+                return NULL;
+            }
             strcat(batch_lines, "\n");
         }
 
@@ -96,5 +105,4 @@ _Noreturn void* influxdb_inserter(void* arg) {
         free((char*)batch_lines);
         speedwire_free_batch(batch_temp);
     }
-    return NULL;
 }

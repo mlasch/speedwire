@@ -7,6 +7,8 @@ include_directories(${SPEEDWIRE_HEADERS_DIR})
 include_directories(${INSERTER_HEADERS_DIR})
 enable_testing()
 add_executable(${PROJECT_NAME} ${SPEEDWIRE_SOURCES} ${INSERTER_SOURCES} tests.c captured_packets.c)
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
+add_compile_definitions(_GNU_SOURCE)
 target_link_libraries(${PROJECT_NAME} PRIVATE cmocka pthread curl)
 add_test(NAME unittest COMMAND ${PROJECT_NAME})
 
