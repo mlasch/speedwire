@@ -23,7 +23,7 @@
 #define SPEEDWIRE_MULTICAST "239.12.255.254"
 #define MSGBUFSIZE 2048
 
-#define TOOL_VERSION "0.1"
+#define TOOL_VERSION "0.2"
 
 static void print_usage() {
     printf("speedwire %s ( https://github.com/mlasch/speedwire )\n"
