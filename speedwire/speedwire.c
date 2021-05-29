@@ -60,7 +60,9 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             // TODO: error handling
             if (obis_data_new == NULL) exit(-1);
             obis_data_new->actual = ntohl(*(uint32_t *)&msgbuf[offset]);
-            asprintf(&obis_data_new->property_name, "%s_act", name);
+            if (asprintf(&obis_data_new->property_name, "%s_act", name) < 0) {
+                exit(-1);
+            }
             obis_data_new->next = speedwire_data->obis_data_list;
             speedwire_data->obis_data_list = obis_data_new;
             obis_data_new = NULL;
@@ -75,7 +77,9 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             // TODO: error handling
             if (obis_data_new == NULL) exit(-1);
             obis_data_new->counter = be64toh(*(uint64_t *)&msgbuf[offset]);
-            asprintf(&obis_data_new->property_name, "%s_cnt", name);
+            if (asprintf(&obis_data_new->property_name, "%s_cnt", name) < 0) {
+                exit(-1);
+            }
             obis_data_new->next = speedwire_data->obis_data_list;
             speedwire_data->obis_data_list = obis_data_new;
             obis_data_new = NULL;
