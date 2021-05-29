@@ -10,3 +10,8 @@ include_directories(${INSERTER_HEADERS_DIR})
 
 add_executable(speedwire ${SPEEDWIRE_SOURCES} ${INSERTER_SOURCES} main.c)
 target_link_libraries(${PROJECT_NAME} PRIVATE pthread curl)
+
+if(SANITIZER)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+endif()

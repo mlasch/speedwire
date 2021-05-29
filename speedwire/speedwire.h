@@ -49,5 +49,6 @@ char *lookup_channel_name(uint8_t type);
 void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *addr, int addrlen,
 				   speedwire_data_t *speedwire_data);
 void speedwire_free_data(speedwire_data_t* data);
+void speedwire_free_obis_data_list(obis_data_t* obis_data_list);
 void speedwire_free_batch(speedwire_batch_t* batch);
 #endif //SPEEDWIRE_SPEEDWIRE_H

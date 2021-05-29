@@ -40,6 +40,29 @@ const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name
     return line_buffer;
 }
 
+const char* generate_line_batch(speedwire_batch_t* batch_temp, const char* measurement) {
+    char* batch_lines = malloc(1);
+    *batch_lines = '\0';
+    const char* new_line = NULL;
+
+    for (speedwire_batch_t* ptr = batch_temp; ptr != NULL; ptr = ptr->next) {
+        new_line = generate_line_protocol(ptr->speedwire_data, measurement);
+        if (new_line == NULL)
+            return NULL;
+        size_t s1 = strlen(batch_lines);
+        size_t s2 = strlen(new_line);
+        batch_lines = realloc(batch_lines, s1 + s2 + 1);
+        strcat(batch_lines, new_line);
+        if (ptr->next != NULL) {
+            batch_lines = realloc(batch_lines, s1 + s2 + 2);
+            strcat(batch_lines, "\n");
+        }
+
+        free((char*)new_line);
+        new_line = NULL;
+    }
+    return batch_lines;
+}
 
 void influxdb_post_request(const char* url, const char*batch_lines, CURL* curl_handle) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
@@ -54,7 +77,6 @@ void influxdb_post_request(const char* url, const char*batch_lines, CURL* curl_h
     }
 }
 
-
 _Noreturn void* influxdb_inserter(void* arg) {
     inserter_args_t* inserter_args = (inserter_args_t*) arg;
     printf("Start influxdb inserter\n");
@@ -66,30 +88,13 @@ _Noreturn void* influxdb_inserter(void* arg) {
         inserter_args->batch_read_ptr = NULL;
         pthread_mutex_unlock(&inserter_args->mtx);
         // convert batch to batch_lines, do curl
-        char*batch_lines = malloc(1);
-        *batch_lines = '\0';
-        const char* new_line = NULL;
+        const char* batch_lines;
+        batch_lines = generate_line_batch(batch_temp, inserter_args->measurement);
 
-        for (speedwire_batch_t* ptr = batch_temp;ptr != NULL; ptr=ptr->next) {
-            new_line = generate_line_protocol(ptr->speedwire_data, inserter_args->measurement);
-            if (new_line == NULL) return NULL;
-            size_t s1 = strlen(batch_lines);
-            size_t s2 = strlen(new_line);
-            batch_lines = realloc(batch_lines,s1+s2+1);
-            strcat(batch_lines, new_line);
-            if (ptr->next != NULL) {
-                batch_lines = realloc(batch_lines,s1+s2+2);
-                strcat(batch_lines, "\n");
-            }
-
-            free((char*) new_line);
-            new_line = NULL;
-        }
         printf("%s\n", batch_lines);
         influxdb_post_request(inserter_args->url, (const char*)batch_lines, inserter_args->curl_handle);
-        free(batch_lines);
+        free((char*)batch_lines);
         speedwire_free_batch(batch_temp);
-
     }
     return NULL;
 }

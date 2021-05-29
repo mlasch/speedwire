@@ -12,5 +12,6 @@ typedef struct {
 } inserter_args_t;
 
 const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name);
+const char* generate_line_batch(speedwire_batch_t* batch_temp, const char* measurement);
 void influxdb_post_request(const char* url, const char*batch_lines, CURL* curl_handle);
 _Noreturn void* influxdb_inserter(void * arg);

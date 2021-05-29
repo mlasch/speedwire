@@ -96,16 +96,19 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
     printf("End of packet %hu %hu offset: %ld\n", end_length, end_marker, offset);
 }
 
-void speedwire_free_data(speedwire_data_t* data) {
-    obis_data_t* obis_list_ptr = data->obis_data_list;
+void speedwire_free_obis_data_list(obis_data_t* obis_data_list) {
+    //    obis_data_t* obis_list_ptr = data->obis_data_list;
     obis_data_t* delete_ptr = NULL;
-    while (obis_list_ptr) {
-        delete_ptr = obis_list_ptr;
-//        printf("free: %s\n", delete_ptr->property_name);
-        obis_list_ptr = obis_list_ptr->next;
+    while (obis_data_list) {
+        delete_ptr = obis_data_list;
+        obis_data_list = obis_data_list->next;
         free(delete_ptr->property_name);
         free(delete_ptr);
     }
+}
+
+void speedwire_free_data(speedwire_data_t* data) {
+    speedwire_free_obis_data_list(data->obis_data_list);
     free(data);
 }
 

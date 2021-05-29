@@ -46,6 +46,8 @@ static void test_handle_pkt0(void **state) {
 
         obis_ptr=obis_ptr->next;
     }
+
+    speedwire_free_obis_data_list(speedwire_data.obis_data_list);
 }
 
 static void test_handle_pkt1(void **state) {
@@ -62,6 +64,8 @@ static void test_handle_pkt1(void **state) {
 
         obis_ptr=obis_ptr->next;
     }
+
+    speedwire_free_obis_data_list(speedwire_data.obis_data_list);
 }
 
 static void test_lineproto(void **state) {
@@ -76,15 +80,42 @@ static void test_lineproto(void **state) {
     lineproto = generate_line_protocol(&speedwire_data, "emeter");
     assert_non_null(lineproto);
     printf("%s\n", lineproto);
+    free((char*)lineproto);
+    speedwire_free_obis_data_list(speedwire_data.obis_data_list);
+}
+
+static void test_line_batch(void** state) {
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
+
+    speedwire_batch_t* batch_current = NULL;
+    speedwire_batch_t* batch_head = NULL;
+
+    speedwire_data_t* speedwire_data = malloc(sizeof(speedwire_data_t));
+    speedwire_data->obis_data_list = NULL;
+    handle_packet(pkt0, 600, &addr, addrlen, speedwire_data);
+
+    // add packet to batch
+    batch_current = malloc(sizeof(speedwire_batch_t));
+    batch_current->speedwire_data = speedwire_data;
+    batch_current->next = batch_head;
+    batch_head = batch_current;
+    batch_current = NULL;
+
+    // convert batch to influx line
+    const char* batch_lines = NULL;
+    batch_lines = generate_line_batch(batch_head, "unittest_measurement");
+    assert_non_null(batch_lines);
+
+    free((char*)batch_lines);
+    speedwire_free_batch(batch_head);
 }
 
 int main(int argc, char *argv[]) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_lookup_channel_name),
-        cmocka_unit_test(test_header_pkt0),
-        cmocka_unit_test(test_handle_pkt0),
-        cmocka_unit_test(test_handle_pkt1),
-        cmocka_unit_test(test_lineproto),
+        cmocka_unit_test(test_lookup_channel_name), cmocka_unit_test(test_header_pkt0),
+        cmocka_unit_test(test_handle_pkt0),         cmocka_unit_test(test_handle_pkt1),
+        cmocka_unit_test(test_lineproto),           cmocka_unit_test(test_line_batch),
     };
 
     int count_fail_tests = cmocka_run_group_tests(tests, NULL, NULL);

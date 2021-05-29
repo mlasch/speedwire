@@ -7,6 +7,10 @@ include_directories(${SPEEDWIRE_HEADERS_DIR})
 include_directories(${INSERTER_HEADERS_DIR})
 enable_testing()
 add_executable(${PROJECT_NAME} ${SPEEDWIRE_SOURCES} ${INSERTER_SOURCES} tests.c captured_packets.c)
-target_link_libraries(${PROJECT_NAME} PRIVATE cmocka)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE cmocka pthread curl)
 add_test(NAME unittest COMMAND ${PROJECT_NAME})
+
+if(SANITIZER)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+endif()
