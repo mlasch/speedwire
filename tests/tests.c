@@ -42,7 +42,7 @@ static void test_handle_pkt0(void **state) {
 
     while (obis_ptr != NULL) {
         // TODO: run asserts against obis
-        printf("%s: %lld\n", obis_ptr->property_name, obis_ptr->counter);
+        printf("%s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
 
         obis_ptr=obis_ptr->next;
     }
