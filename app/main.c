@@ -66,12 +66,17 @@ int main(int argc, char *argv[]) {
         {NULL, 0, NULL, 0}};
 
     for (int option_index = 0, c = 0; c != -1; c = getopt_long(argc, argv, "i:u:m:c:v", long_options, &option_index)) {
-        char *end;
         switch (c) {
-        case 'i':
-            asprintf(&if_name, "%s", optarg);
+        case 'i': {
+            int res;
+
+            res = asprintf(&if_name, "%s", optarg);
+            if (res <= 0) {
+                exit(EXIT_FAILURE);
+            }
             have_interface = 0;
             break;
+        }
         case 'u':
             inserter_args.url = optarg;
             have_url = 0;
@@ -80,13 +85,16 @@ int main(int argc, char *argv[]) {
             inserter_args.measurement = optarg;
             have_measurement = 0;
             break;
-        case 'c':
+        case 'c': {
+            char* end;
+
             batch_count = strtol(optarg, &end, 10);
             if (batch_count == 0 || optarg == end) {
                 print_usage();
                 exit(EXIT_FAILURE);
             }
             break;
+        }
         case 'v':
             printf("netprobe %s\n", TOOL_VERSION);
             exit(EXIT_SUCCESS);
@@ -204,6 +212,8 @@ int main(int argc, char *argv[]) {
             packet_cnt = 0;
         }
     }
+
+    free(if_name);
     return 0;
 }
 

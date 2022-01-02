@@ -27,14 +27,14 @@ static void print_obis_header(obis_header_t *header) {
 void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *addr, int addrlen,
                    speedwire_data_t *speedwire_data) {
     /* fixed length header */
-    struct speedwire_header *header;
+    speedwire_header *header;
     //obis_data_t *orbis_data = NULL;
     obis_data_t *obis_data_new;
 
-    header = (struct speedwire_header *)msgbuf;
+    header = (speedwire_header *)msgbuf;
 //    print_header(header);
 
-    size_t offset = sizeof(struct speedwire_header); // 24
+    size_t offset = sizeof(speedwire_header); // 24
 
     clock_gettime(CLOCK_REALTIME, &speedwire_data->timestamp);
     while (offset < ntohs(header->datalength) + 16) {

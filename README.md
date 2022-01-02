@@ -4,10 +4,19 @@ This is a data collector for the SMA speedwire protocol. It is used and tested o
 
 The inserter stores persisted data into a influxdb 1.x server protected by [influxdb-guard](github.com/yvesf/influxdb-guard).
 
+## Dependencies
+
+```
+sudo apt install libcurl4-openssl-dev libcmocka-dev
+
+# only required for building the tests
+sudo apt install libcmocka-dev
+```
+
 ## Build and install
 Build release.
 ```
-cd speedwire/app
+cd app
 cmake -GNinja -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
@@ -27,7 +36,7 @@ sudo systemctl start speedwire
 ## Run tests
 Build the test with address sanitizer enabled.
 ```
-cd speedwire/tests
+cd tests
 cmake -GNinja -B build -DCMAKE_BUILD_TYPE=Release -DSANITIZER=address
 cmake --build build
 ```
