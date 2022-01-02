@@ -212,6 +212,8 @@ int main(int argc, char *argv[]) {
             packet_cnt = 0;
         }
     }
+
+    free(if_name);
     return 0;
 }
 
