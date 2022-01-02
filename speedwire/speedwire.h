@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
-struct speedwire_header {
+typedef struct speedwire_header {
 	char vendor[4]; //0
 	uint16_t length; // 4
 	uint16_t tag0; // 6
