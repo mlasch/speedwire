@@ -17,7 +17,7 @@ const char* generate_line_protocol(speedwire_data_t* data, const char* meas_name
 
     for (obis_data_t * obis_ptr=data->obis_data_list;obis_ptr != NULL; obis_ptr = obis_ptr->next) {
 //        printf("LINE %s: %ld\n", obis_ptr->property_name, obis_ptr->counter);
-        if (asprintf(&save_ptr, "%s%s=%ld", line_buffer, obis_ptr->property_name, obis_ptr->counter) < 0) {
+        if (asprintf(&save_ptr, "%s%s=%ld", line_buffer, obis_ptr->property_name, obis_ptr->value) < 0) {
             return NULL;
         }
         free(line_buffer);
