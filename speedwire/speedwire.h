@@ -28,10 +28,7 @@ typedef struct obis_header_t {
 typedef struct obis_data_t {
     struct obis_data_t* next;
     char* property_name;
-    union {
-        uint32_t actual;
-        uint64_t counter;
-    };
+    uint64_t value;
 } obis_data_t;
 
 typedef struct speedwire_data_t {

@@ -59,7 +59,7 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             obis_data_new = malloc(sizeof(obis_data_t));
             // TODO: error handling
             if (obis_data_new == NULL) exit(-1);
-            obis_data_new->actual = ntohl(*(uint32_t *)&msgbuf[offset]);
+            obis_data_new->value = ntohl(*(uint32_t *)&msgbuf[offset]);
             if (asprintf(&obis_data_new->property_name, "%s_act", name) < 0) {
                 exit(-1);
             }
@@ -76,7 +76,7 @@ void handle_packet(const unsigned char *msgbuf, int nbytes, struct sockaddr_in *
             obis_data_new = malloc(sizeof(obis_data_t));
             // TODO: error handling
             if (obis_data_new == NULL) exit(-1);
-            obis_data_new->counter = be64toh(*(uint64_t *)&msgbuf[offset]);
+            obis_data_new->value = be64toh(*(uint64_t *)&msgbuf[offset]);
             if (asprintf(&obis_data_new->property_name, "%s_cnt", name) < 0) {
                 exit(-1);
             }
